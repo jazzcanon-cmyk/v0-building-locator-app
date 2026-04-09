@@ -1,60 +1,41 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { MapPin, Navigation, Building2, Copy, Check, Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { MapPin, Building2, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { BuildingCard } from "@/components/building-card"
 import { LocationStatus } from "@/components/location-status"
-
-// 샘플 데이터 (실제로는 구글 시트에서 가져올 데이터)
-const sampleBuildings = [
-  {
-    id: "1",
-    name: "래미안아파트 101동",
-    address: "서울시 강남구 테헤란로 123",
-    password: "1234*",
-    distance: 12,
-    lat: 37.5665,
-    lng: 126.978,
-  },
-  {
-    id: "2",
-    name: "현대오피스텔 A동",
-    address: "서울시 강남구 테헤란로 125",
-    password: "9876#",
-    distance: 28,
-    lat: 37.5667,
-    lng: 126.9785,
-  },
-  {
-    id: "3",
-    name: "삼성빌딩",
-    address: "서울시 강남구 테헤란로 127",
-    password: "5555",
-    distance: 35,
-    lat: 37.5668,
-    lng: 126.9788,
-  },
-  {
-    id: "4",
-    name: "푸르지오 203동",
-    address: "서울시 강남구 테헤란로 130",
-    password: "호수+*1234",
-    distance: 45,
-    lat: 37.567,
-    lng: 126.979,
-  },
-]
 
 interface Building {
   id: string
   name: string
   address: string
   password: string
+  latitude: number
+  longitude: number
   distance: number
-  lat: number
-  lng: number
+}
+
+// 두 좌표 사이의 거리 계산 (미터 단위)
+function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371e3 // 지구 반지름 (미터)
+  const φ1 = (lat1 * Math.PI) / 180
+  const φ2 = (lat2 * Math.PI) / 180
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  return R * c
 }
 
 export default function Home() {
@@ -63,6 +44,32 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+
+  const fetchBuildings = useCallback(async (lat: number, lng: number) => {
+    try {
+      const response = await fetch("/api/buildings")
+      if (!response.ok) throw new Error("데이터를 가져오는데 실패했습니다.")
+      
+      const data = await response.json()
+      
+      // 거리 계산 및 50m 이내 필터링
+      const buildingsWithDistance = data.buildings
+        .map((building: Omit<Building, "distance">) => ({
+          ...building,
+          distance: Math.round(
+            calculateDistance(lat, lng, building.latitude, building.longitude)
+          ),
+        }))
+        .filter((b: Building) => b.distance <= 50)
+        .sort((a: Building, b: Building) => a.distance - b.distance)
+
+      setBuildings(buildingsWithDistance)
+      setLastUpdated(new Date())
+    } catch (err) {
+      console.error("Error fetching buildings:", err)
+      setError("건물 데이터를 가져오는데 실패했습니다.")
+    }
+  }, [])
 
   const getLocation = useCallback(() => {
     setLoading(true)
@@ -75,18 +82,10 @@ export default function Home() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords
         setLocation({ lat: latitude, lng: longitude })
-        
-        // 실제로는 여기서 구글 시트 API를 호출하여 데이터를 가져옴
-        // 지금은 샘플 데이터 사용
-        const nearbyBuildings = sampleBuildings
-          .filter((b) => b.distance <= 50)
-          .sort((a, b) => a.distance - b.distance)
-        
-        setBuildings(nearbyBuildings)
-        setLastUpdated(new Date())
+        await fetchBuildings(latitude, longitude)
         setLoading(false)
       },
       (err) => {
@@ -111,7 +110,7 @@ export default function Home() {
         maximumAge: 0,
       }
     )
-  }, [])
+  }, [fetchBuildings])
 
   useEffect(() => {
     getLocation()

@@ -11,8 +11,8 @@ interface Building {
   address: string
   password: string
   distance: number
-  lat: number
-  lng: number
+  latitude: number
+  longitude: number
 }
 
 interface BuildingCardProps {
@@ -33,7 +33,7 @@ export function BuildingCard({ building }: BuildingCardProps) {
   }
 
   const openNavigation = () => {
-    const url = `https://maps.google.com/maps?daddr=${building.lat},${building.lng}`
+    const url = `https://maps.google.com/maps?daddr=${building.latitude},${building.longitude}`
     window.open(url, "_blank")
   }
 
