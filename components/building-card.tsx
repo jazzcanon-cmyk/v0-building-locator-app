@@ -23,7 +23,8 @@ interface BuildingCardProps {
 export function BuildingCard({ building, showDistance = true }: BuildingCardProps) {
   const [copied, setCopied] = useState(false)
 
-  const copyPassword = async () => {
+  const copyPassword = async (e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       await navigator.clipboard.writeText(building.password)
       setCopied(true)
@@ -33,13 +34,22 @@ export function BuildingCard({ building, showDistance = true }: BuildingCardProp
     }
   }
 
-  const openNavigation = () => {
+  const openNavigation = (e: React.MouseEvent) => {
+    e.stopPropagation()
     const url = `https://maps.google.com/maps?daddr=${building.latitude},${building.longitude}`
     window.open(url, "_blank")
   }
 
+  const openMap = () => {
+    const url = `https://www.google.com/maps?q=${building.latitude},${building.longitude}`
+    window.open(url, "_blank")
+  }
+
   return (
-    <Card className="overflow-hidden border-border bg-card transition-all hover:border-primary/50">
+    <Card 
+      className="overflow-hidden border-border bg-card transition-all hover:border-primary/50 cursor-pointer active:scale-[0.98]"
+      onClick={openMap}
+    >
       <CardContent className="p-0">
         <div className="flex items-stretch">
           {/* Distance Badge */}
