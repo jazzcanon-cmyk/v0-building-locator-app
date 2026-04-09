@@ -59,8 +59,8 @@ export function BuildingCard({ building, showDistance = true }: BuildingCardProp
             
             {/* Password Display */}
             <div className="mt-3 flex items-center gap-2">
-              <div className="flex-1 rounded-lg bg-primary/10 px-3 py-2">
-                <span className="font-mono text-lg font-bold tracking-wider text-primary">
+              <div className="flex-1 rounded-lg bg-yellow-500/10 px-3 py-2">
+                <span className="font-mono text-lg font-bold tracking-wider text-yellow-400">
                   {building.password}
                 </span>
               </div>
