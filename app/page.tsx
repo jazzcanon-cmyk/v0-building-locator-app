@@ -262,10 +262,11 @@ export default function Home() {
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="건물명 또는 주소를 입력하세요"
+                placeholder="건물명 or 주소 넣어보세요"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 h-12 bg-secondary border-0 text-foreground placeholder:text-muted-foreground"
+                className="pl-10 h-12 bg-secondary border-0 text-foreground placeholder:text-muted-foreground/50"
+                autoFocus
               />
             </div>
           </section>
