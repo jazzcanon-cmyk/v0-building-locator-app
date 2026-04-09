@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import L from "leaflet"
-import "leaflet/dist/leaflet.css"
 
 interface Building {
   id: string
@@ -32,12 +30,28 @@ export function BuildingMap({
   const markersRef = useRef<L.Marker[]>([])
   const userMarkerRef = useRef<L.Marker | null>(null)
   const [mapReady, setMapReady] = useState(false)
+  const [L, setL] = useState<typeof import("leaflet") | null>(null)
+
+  // Leaflet 동적 로드
+  useEffect(() => {
+    import("leaflet").then((leaflet) => {
+      setL(leaflet.default as unknown as typeof import("leaflet"))
+    })
+  }, [])
 
   // 지도 초기화
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return
+    if (!mapRef.current || mapInstanceRef.current || !L) return
 
-    const defaultCenter: L.LatLngExpression = userLocation 
+    // CSS 동적 로드
+    if (!document.querySelector('link[href*="leaflet.css"]')) {
+      const link = document.createElement("link")
+      link.rel = "stylesheet"
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      document.head.appendChild(link)
+    }
+
+    const defaultCenter: [number, number] = userLocation 
       ? [userLocation.lat, userLocation.lng] 
       : [35.54, 129.34] // 울산 남구 기본 좌표
 
@@ -57,12 +71,13 @@ export function BuildingMap({
     return () => {
       map.remove()
       mapInstanceRef.current = null
+      setMapReady(false)
     }
-  }, [])
+  }, [L, userLocation])
 
   // 사용자 위치 마커 업데이트
   useEffect(() => {
-    if (!mapInstanceRef.current || !userLocation) return
+    if (!mapInstanceRef.current || !userLocation || !L || !mapReady) return
 
     // 기존 사용자 마커 제거
     if (userMarkerRef.current) {
@@ -104,11 +119,11 @@ export function BuildingMap({
 
     // 지도 중심을 사용자 위치로 이동
     mapInstanceRef.current.setView([userLocation.lat, userLocation.lng], 17)
-  }, [userLocation, mapReady])
+  }, [userLocation, mapReady, L])
 
   // 건물 마커 업데이트
   useEffect(() => {
-    if (!mapInstanceRef.current || !mapReady) return
+    if (!mapInstanceRef.current || !mapReady || !L) return
 
     // 기존 건물 마커 모두 제거
     markersRef.current.forEach((marker) => marker.remove())
@@ -145,7 +160,15 @@ export function BuildingMap({
 
       markersRef.current.push(marker)
     })
-  }, [buildings, mapReady, selectedBuilding, onBuildingSelect])
+  }, [buildings, mapReady, selectedBuilding, onBuildingSelect, L])
+
+  if (!L) {
+    return (
+      <div className="relative w-full h-[300px] rounded-xl overflow-hidden border border-border bg-secondary flex items-center justify-center">
+        <div className="text-muted-foreground">지도 로딩 중...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative w-full h-[300px] rounded-xl overflow-hidden border border-border">
