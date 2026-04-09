@@ -1,12 +1,27 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import dynamic from "next/dynamic"
 import { MapPin, Building2, Loader2, AlertCircle, RefreshCw, Search, Navigation } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { BuildingCard } from "@/components/building-card"
 import { LocationStatus } from "@/components/location-status"
+import { SelectedBuildingInfo } from "@/components/selected-building-info"
+
+// 지도 컴포넌트 동적 import (SSR 비활성화)
+const BuildingMap = dynamic(
+  () => import("@/components/building-map").then((mod) => mod.BuildingMap),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[300px] rounded-xl bg-secondary flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+)
 
 interface Building {
   id: string
@@ -51,6 +66,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null)
 
   const fetchBuildings = useCallback(async (lat?: number, lng?: number) => {
     try {
@@ -143,6 +159,11 @@ export default function Home() {
     setSearchResults(filtered)
   }, [allBuildings])
 
+  // 지도에서 건물 선택
+  const handleBuildingSelect = useCallback((building: Building | null) => {
+    setSelectedBuilding(building)
+  }, [])
+
   useEffect(() => {
     getLocation()
   }, [getLocation])
@@ -178,7 +199,10 @@ export default function Home() {
         <div className="container mx-auto px-4 pb-3">
           <div className="flex gap-2 rounded-lg bg-secondary p-1">
             <button
-              onClick={() => setActiveTab("nearby")}
+              onClick={() => {
+                setActiveTab("nearby")
+                setSelectedBuilding(null)
+              }}
               className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "nearby"
                   ? "bg-primary text-primary-foreground"
@@ -189,7 +213,10 @@ export default function Home() {
               내 주변
             </button>
             <button
-              onClick={() => setActiveTab("search")}
+              onClick={() => {
+                setActiveTab("search")
+                setSelectedBuilding(null)
+              }}
               className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "search"
                   ? "bg-primary text-primary-foreground"
@@ -216,8 +243,29 @@ export default function Home() {
             onRetry={getLocation}
           />
 
+          {/* Map Section */}
+          {!loading && !error && location && (
+            <section className="container mx-auto px-4 pt-4">
+              <BuildingMap
+                userLocation={location}
+                buildings={allBuildings}
+                onBuildingSelect={handleBuildingSelect}
+                selectedBuilding={selectedBuilding}
+              />
+              {selectedBuilding && (
+                <SelectedBuildingInfo
+                  building={selectedBuilding}
+                  onClose={() => setSelectedBuilding(null)}
+                />
+              )}
+            </section>
+          )}
+
           {/* Nearby Building List */}
           <section className="container mx-auto px-4 py-6">
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">
+              반경 50m 내 건물
+            </h2>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -241,7 +289,7 @@ export default function Home() {
                     반경 50m 내에 등록된 건물이 없습니다.
                   </p>
                   <p className="mt-2 text-center text-sm text-muted-foreground">
-                    검색 탭에서 건물명이나 주소로 찾아보세요.
+                    지도에서 마커를 클릭하거나 검색 탭을 이용해보세요.
                   </p>
                 </CardContent>
               </Card>
