@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Copy, Check, X } from "lucide-react"
+import { X, Pencil, Check, Navigation } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 interface Building {
   id: string
@@ -18,19 +19,59 @@ interface Building {
 interface SelectedBuildingInfoProps {
   building: Building
   onClose: () => void
+  onPasswordUpdate?: (buildingId: string, newPassword: string) => void
 }
 
-export function SelectedBuildingInfo({ building, onClose }: SelectedBuildingInfoProps) {
-  const [copied, setCopied] = useState(false)
+export function SelectedBuildingInfo({ building, onClose, onPasswordUpdate }: SelectedBuildingInfoProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editPassword, setEditPassword] = useState(building.password)
+  const [isUpdating, setIsUpdating] = useState(false)
 
-  const copyPassword = async () => {
-    try {
-      await navigator.clipboard.writeText(building.password)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error("클립보드 복사 실패:", err)
+  const handleEdit = () => {
+    setIsEditing(true)
+    setEditPassword(building.password)
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    setEditPassword(building.password)
+  }
+
+  const handleSave = async () => {
+    if (editPassword === building.password) {
+      setIsEditing(false)
+      return
     }
+
+    setIsUpdating(true)
+    try {
+      const response = await fetch("/api/buildings/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buildingId: building.id,
+          name: building.name,
+          newPassword: editPassword,
+        }),
+      })
+
+      if (response.ok) {
+        onPasswordUpdate?.(building.id, editPassword)
+        setIsEditing(false)
+      } else {
+        alert("비밀번호 업데이트에 실패했습니다.")
+      }
+    } catch (error) {
+      console.error("Update error:", error)
+      alert("비밀번호 업데이트에 실패했습니다.")
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const openNavigation = () => {
+    const url = `https://maps.google.com/maps?daddr=${building.latitude},${building.longitude}`
+    window.open(url, "_blank")
   }
 
   return (
@@ -38,36 +79,78 @@ export function SelectedBuildingInfo({ building, onClose }: SelectedBuildingInfo
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground truncate">{building.name}</h3>
-            <p className="text-sm text-muted-foreground mt-1 truncate">{building.address}</p>
-            <div className="flex items-center gap-2 mt-3">
-              <div className="flex-1 rounded-lg bg-yellow-500/10 px-3 py-2">
-                <span className="font-mono text-lg font-bold tracking-wider text-yellow-400">
-                  {building.password}
-                </span>
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0 pr-2">
+                <p className="text-sm text-foreground">
+                  <span className="font-bold">{building.name}</span>
+                  <span className="text-muted-foreground"> - </span>
+                  <span className="text-muted-foreground">{building.address}</span>
+                </p>
               </div>
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="icon"
-                onClick={copyPassword}
-                className="h-10 w-10 shrink-0"
+                onClick={onClose}
+                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
               >
-                {copied ? (
-                  <Check className="h-4 w-4 text-primary" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
+                <X className="h-4 w-4" />
               </Button>
             </div>
+            <div className="flex items-center gap-2 mt-3">
+              {isEditing ? (
+                <>
+                  <Input
+                    type="text"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    className="flex-1 h-10 text-sm bg-secondary border-primary/50"
+                    autoFocus
+                  />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleSave}
+                    disabled={isUpdating}
+                    className="h-10 w-10 shrink-0"
+                  >
+                    <Check className="h-4 w-4 text-primary" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleCancel}
+                    disabled={isUpdating}
+                    className="h-10 w-10 shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <span className="font-mono text-lg font-bold text-yellow-400">
+                    {building.password}
+                  </span>
+                  <div className="flex-1" />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleEdit}
+                    className="h-10 w-10 shrink-0"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={openNavigation}
+                    className="h-10 w-10 shrink-0"
+                  >
+                    <Navigation className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
       </CardContent>
     </Card>

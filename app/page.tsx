@@ -164,6 +164,26 @@ export default function Home() {
     setSelectedBuilding(building)
   }, [])
 
+  // 비밀번호 업데이트 핸들러
+  const handlePasswordUpdate = useCallback((buildingId: string, newPassword: string) => {
+    // 전체 건물 목록 업데이트
+    setAllBuildings(prev => 
+      prev.map(b => b.id === buildingId ? { ...b, password: newPassword } : b)
+    )
+    // 주변 건물 목록 업데이트
+    setNearbyBuildings(prev => 
+      prev.map(b => b.id === buildingId ? { ...b, password: newPassword } : b)
+    )
+    // 검색 결과 업데이트
+    setSearchResults(prev => 
+      prev.map(b => b.id === buildingId ? { ...b, password: newPassword } : b)
+    )
+    // 선택된 건물 업데이트
+    if (selectedBuilding?.id === buildingId) {
+      setSelectedBuilding(prev => prev ? { ...prev, password: newPassword } : null)
+    }
+  }, [selectedBuilding])
+
   useEffect(() => {
     getLocation()
   }, [getLocation])
@@ -256,6 +276,7 @@ export default function Home() {
                 <SelectedBuildingInfo
                   building={selectedBuilding}
                   onClose={() => setSelectedBuilding(null)}
+                  onPasswordUpdate={handlePasswordUpdate}
                 />
               )}
             </section>
@@ -296,7 +317,12 @@ export default function Home() {
             ) : (
               <div className="space-y-3">
                 {nearbyBuildings.map((building) => (
-                  <BuildingCard key={building.id} building={building} showDistance />
+                  <BuildingCard 
+                    key={building.id} 
+                    building={building} 
+                    showDistance 
+                    onPasswordUpdate={handlePasswordUpdate}
+                  />
                 ))}
               </div>
             )}
@@ -348,7 +374,12 @@ export default function Home() {
                   검색 결과 {searchResults.length}건
                 </p>
                 {searchResults.map((building) => (
-                  <BuildingCard key={building.id} building={building} showDistance={false} />
+                  <BuildingCard 
+                    key={building.id} 
+                    building={building} 
+                    showDistance={false} 
+                    onPasswordUpdate={handlePasswordUpdate}
+                  />
                 ))}
               </div>
             )}
