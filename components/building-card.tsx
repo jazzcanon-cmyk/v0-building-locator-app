@@ -10,16 +10,17 @@ interface Building {
   name: string
   address: string
   password: string
-  distance: number
+  distance?: number
   latitude: number
   longitude: number
 }
 
 interface BuildingCardProps {
   building: Building
+  showDistance?: boolean
 }
 
-export function BuildingCard({ building }: BuildingCardProps) {
+export function BuildingCard({ building, showDistance = true }: BuildingCardProps) {
   const [copied, setCopied] = useState(false)
 
   const copyPassword = async () => {
@@ -42,13 +43,15 @@ export function BuildingCard({ building }: BuildingCardProps) {
       <CardContent className="p-0">
         <div className="flex items-stretch">
           {/* Distance Badge */}
-          <div className="flex w-20 flex-shrink-0 flex-col items-center justify-center bg-secondary px-3 py-4">
-            <span className="text-2xl font-bold text-primary">{building.distance}</span>
-            <span className="text-xs text-muted-foreground">미터</span>
-          </div>
+          {showDistance && building.distance !== undefined && (
+            <div className="flex w-20 flex-shrink-0 flex-col items-center justify-center bg-secondary px-3 py-4">
+              <span className="text-2xl font-bold text-primary">{building.distance}</span>
+              <span className="text-xs text-muted-foreground">미터</span>
+            </div>
+          )}
 
           {/* Building Info */}
-          <div className="flex flex-1 flex-col justify-center px-4 py-3">
+          <div className={`flex flex-1 flex-col justify-center py-3 ${showDistance && building.distance !== undefined ? 'px-4' : 'px-4'}`}>
             <h3 className="font-semibold text-foreground">{building.name}</h3>
             <p className="mt-1 text-xs text-muted-foreground line-clamp-1">
               {building.address}
