@@ -7,7 +7,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '빌딩코드 | 공동현관 비밀번호',
+  title: '신정대리점 | 공동현관 비밀번호',
   description: '배달/택배 기사를 위한 공동현관 비밀번호 조회 서비스',
   generator: 'v0.app',
   icons: {
