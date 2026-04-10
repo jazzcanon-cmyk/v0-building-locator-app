@@ -1,91 +1,35 @@
-import { NextResponse } from "next/server"
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 
-const SHEET_ID = "13ktJLWfDtwxmwetExLM4ihdTvZp5TORwUcIZMnCGw2s"
-const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-export interface Building {
-  id: string
-  name: string
-  address: string
-  password: string
-  latitude: number
-  longitude: number
-}
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-function parseCSV(csv: string): Building[] {
-  const lines = csv.split("\n")
-  const buildings: Building[] = []
-
-  // Skip header row (index 0)
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (!line) continue
-
-    // Parse CSV considering potential commas in fields
-    const values = parseCSVLine(line)
-    
-    if (values.length >= 5) {
-      const [name, address, password, lat, lng] = values
-      const latitude = parseFloat(lat)
-      const longitude = parseFloat(lng)
-
-      if (!isNaN(latitude) && !isNaN(longitude)) {
-        buildings.push({
-          id: `building-${i}`,
-          name: name.trim(),
-          address: address.trim(),
-          password: password.trim(),
-          latitude,
-          longitude,
-        })
-      }
-    }
-  }
-
-  return buildings
-}
-
-function parseCSVLine(line: string): string[] {
-  const result: string[] = []
-  let current = ""
-  let inQuotes = false
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i]
-
-    if (char === '"') {
-      inQuotes = !inQuotes
-    } else if (char === "," && !inQuotes) {
-      result.push(current)
-      current = ""
-    } else {
-      current += char
-    }
-  }
-  result.push(current)
-
-  return result
-}
-
-export async function GET() {
+export async function POST(request: Request) {
   try {
-    const response = await fetch(SHEET_URL, {
-      next: { revalidate: 60 }, // Cache for 60 seconds
-    })
+    const data = await request.json();
+    // 1-j 사진을 보니 id가 숫자(int8)야. 숫자로 변환해서 넘겨줘야 에러가 안 나.
+    const { id, password, memo } = data; 
+    const buildingId = Number(id.replace('building-', '')); // 'building-138' -> 138 변환
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch Google Sheet")
+    if (isNaN(buildingId)) {
+      return NextResponse.json({ error: '유효한 ID가 아닙니다.' }, { status: 400 });
     }
 
-    const csv = await response.text()
-    const buildings = parseCSV(csv)
+    const { error } = await supabase
+      .from('buildings') 
+      .update({ 
+        password: password,
+        memo: memo 
+      })
+      .eq('id', buildingId); // 숫자로 비교
 
-    return NextResponse.json({ buildings })
-  } catch (error) {
-    console.error("Error fetching buildings:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch building data" },
-      { status: 500 }
-    )
+    if (error) throw error;
+
+    return NextResponse.json({ message: '성공적으로 저장되었습니다!' });
+  } catch (error: any) {
+    console.error('업데이트 에러:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
