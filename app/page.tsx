@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
-import { MapPin, Building2, Loader2, AlertCircle, RefreshCw, Search, Navigation } from "lucide-react"
+import { MapPin, Loader2, AlertCircle, RefreshCw, Search, Navigation } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,16 +10,15 @@ import { BuildingCard } from "@/components/building-card"
 import { LocationStatus } from "@/components/location-status"
 import { SelectedBuildingInfo } from "@/components/selected-building-info"
 
-// 지도 컴포넌트 동적 import (SSR 비활성화)
 const BuildingMap = dynamic(
   () => import("@/components/building-map").then((mod) => mod.BuildingMap),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="w-full h-[300px] rounded-xl bg-secondary flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
-    )
+    ),
   }
 )
 
@@ -28,29 +27,22 @@ interface Building {
   name: string
   address: string
   password: string
+  memo?: string          // ← 메모 필드 추가
   latitude: number
   longitude: number
   distance?: number
 }
 
-// 두 좌표 사이의 거리 계산 (미터 단위)
-function calculateDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number {
-  const R = 6371e3 // 지구 반지름 (미터)
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371e3
   const φ1 = (lat1 * Math.PI) / 180
   const φ2 = (lat2 * Math.PI) / 180
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lng2 - lng1) * Math.PI) / 180
-
   const a =
     Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
     Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
   return R * c
 }
 
@@ -72,11 +64,10 @@ export default function Home() {
     try {
       const response = await fetch("/api/buildings")
       if (!response.ok) throw new Error("데이터를 가져오는데 실패했습니다.")
-      
+
       const data = await response.json()
       setAllBuildings(data.buildings)
-      
-      // 위치가 있으면 거리 계산 및 50m 이내 필터링
+
       if (lat !== undefined && lng !== undefined) {
         const buildingsWithDistance = data.buildings
           .map((building: Building) => ({
@@ -90,7 +81,7 @@ export default function Home() {
 
         setNearbyBuildings(buildingsWithDistance)
       }
-      
+
       setLastUpdated(new Date())
     } catch (err) {
       console.error("Error fetching buildings:", err)
@@ -130,59 +121,50 @@ export default function Home() {
             setError("위치를 가져오는 중 오류가 발생했습니다.")
         }
         setLoading(false)
-        // 위치 오류가 있어도 검색 기능은 사용할 수 있도록 데이터 로드
         fetchBuildings()
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }, [fetchBuildings])
 
-  // 검색 기능
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query)
-    
-    if (query.trim() === "") {
-      setSearchResults([])
-      return
-    }
-    
-    const lowerQuery = query.toLowerCase().trim()
-    const filtered = allBuildings.filter(
-      (building) =>
-        building.name.toLowerCase().includes(lowerQuery) ||
-        building.address.toLowerCase().includes(lowerQuery)
-    )
-    setSearchResults(filtered)
-  }, [allBuildings])
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query)
+      if (query.trim() === "") {
+        setSearchResults([])
+        return
+      }
+      const lowerQuery = query.toLowerCase().trim()
+      const filtered = allBuildings.filter(
+        (b) =>
+          b.name.toLowerCase().includes(lowerQuery) ||
+          b.address.toLowerCase().includes(lowerQuery)
+      )
+      setSearchResults(filtered)
+    },
+    [allBuildings]
+  )
 
-  // 지도에서 건물 선택
   const handleBuildingSelect = useCallback((building: Building | null) => {
     setSelectedBuilding(building)
   }, [])
 
-  // 비밀번호 업데이트 핸들러
-  const handlePasswordUpdate = useCallback((buildingId: string, newPassword: string) => {
-    // 전체 건물 목록 업데이트
-    setAllBuildings(prev => 
-      prev.map(b => b.id === buildingId ? { ...b, password: newPassword } : b)
-    )
-    // 주변 건물 목록 업데이트
-    setNearbyBuildings(prev => 
-      prev.map(b => b.id === buildingId ? { ...b, password: newPassword } : b)
-    )
-    // 검색 결과 업데이트
-    setSearchResults(prev => 
-      prev.map(b => b.id === buildingId ? { ...b, password: newPassword } : b)
-    )
-    // 선택된 건물 업데이트
-    if (selectedBuilding?.id === buildingId) {
-      setSelectedBuilding(prev => prev ? { ...prev, password: newPassword } : null)
-    }
-  }, [selectedBuilding])
+  // ── 비밀번호 + 메모 실시간 반영 ──────────────────────────────────────────
+  const handlePasswordUpdate = useCallback(
+    (buildingId: string, newPassword: string, newMemo: string) => {
+      const applyUpdate = (b: Building) =>
+        b.id === buildingId ? { ...b, password: newPassword, memo: newMemo } : b
+
+      setAllBuildings((prev) => prev.map(applyUpdate))
+      setNearbyBuildings((prev) => prev.map(applyUpdate))
+      setSearchResults((prev) => prev.map(applyUpdate))
+      setSelectedBuilding((prev) =>
+        prev?.id === buildingId ? { ...prev, password: newPassword, memo: newMemo } : prev
+      )
+    },
+    []
+  )
+  // ────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     getLocation()
@@ -197,13 +179,13 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/20">
                 <div className="absolute inset-0 rounded-xl bg-primary/20 blur-sm" />
-                <svg 
-                  className="relative h-5 w-5 text-primary-foreground" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
+                <svg
+                  className="relative h-5 w-5 text-primary-foreground"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   <path d="M3 21h18" />
@@ -236,10 +218,7 @@ export default function Home() {
         <div className="container mx-auto px-4 pb-3">
           <div className="flex gap-2 rounded-lg bg-secondary p-1">
             <button
-              onClick={() => {
-                setActiveTab("nearby")
-                setSelectedBuilding(null)
-              }}
+              onClick={() => { setActiveTab("nearby"); setSelectedBuilding(null) }}
               className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "nearby"
                   ? "bg-primary text-primary-foreground"
@@ -250,10 +229,7 @@ export default function Home() {
               내 주변
             </button>
             <button
-              onClick={() => {
-                setActiveTab("search")
-                setSelectedBuilding(null)
-              }}
+              onClick={() => { setActiveTab("search"); setSelectedBuilding(null) }}
               className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "search"
                   ? "bg-primary text-primary-foreground"
@@ -270,7 +246,6 @@ export default function Home() {
       {/* Tab Content */}
       {activeTab === "nearby" ? (
         <>
-          {/* Location Status */}
           <LocationStatus
             loading={loading}
             error={error}
@@ -280,7 +255,6 @@ export default function Home() {
             onRetry={getLocation}
           />
 
-          {/* Map Section */}
           {!loading && !error && location && (
             <section className="container mx-auto px-4 pt-4">
               <BuildingMap
@@ -299,7 +273,6 @@ export default function Home() {
             </section>
           )}
 
-          {/* Nearby Building List */}
           <section className="container mx-auto px-4 py-6">
             <h2 className="text-sm font-medium text-muted-foreground mb-3">
               반경 50m 내 건물
@@ -314,9 +287,7 @@ export default function Home() {
                 <CardContent className="flex flex-col items-center py-10">
                   <AlertCircle className="h-12 w-12 text-destructive" />
                   <p className="mt-4 text-center text-destructive">{error}</p>
-                  <Button onClick={getLocation} className="mt-6">
-                    다시 시도
-                  </Button>
+                  <Button onClick={getLocation} className="mt-6">다시 시도</Button>
                 </CardContent>
               </Card>
             ) : nearbyBuildings.length === 0 ? (
@@ -334,10 +305,10 @@ export default function Home() {
             ) : (
               <div className="space-y-3">
                 {nearbyBuildings.map((building) => (
-                  <BuildingCard 
-                    key={building.id} 
-                    building={building} 
-                    showDistance 
+                  <BuildingCard
+                    key={building.id}
+                    building={building}
+                    showDistance
                     onPasswordUpdate={handlePasswordUpdate}
                   />
                 ))}
@@ -347,7 +318,6 @@ export default function Home() {
         </>
       ) : (
         <>
-          {/* Search Section */}
           <section className="container mx-auto px-4 py-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -362,7 +332,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Search Results */}
           <section className="container mx-auto px-4 pb-6">
             {searchQuery.trim() === "" ? (
               <Card className="bg-card">
@@ -391,10 +360,10 @@ export default function Home() {
                   검색 결과 {searchResults.length}건
                 </p>
                 {searchResults.map((building) => (
-                  <BuildingCard 
-                    key={building.id} 
-                    building={building} 
-                    showDistance={false} 
+                  <BuildingCard
+                    key={building.id}
+                    building={building}
+                    showDistance={false}
                     onPasswordUpdate={handlePasswordUpdate}
                   />
                 ))}
@@ -404,7 +373,6 @@ export default function Home() {
         </>
       )}
 
-      {/* Footer */}
       <footer className="border-t border-border bg-card/50 py-6">
         <div className="container mx-auto px-4 text-center">
           <p className="text-xs text-muted-foreground">
