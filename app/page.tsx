@@ -16,7 +16,7 @@ const BuildingMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[300px] rounded-xl bg-secondary flex items-center justify-center">
+      <div className="w-full h-[300px] shrink-0 rounded-xl bg-secondary flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     ),
@@ -28,7 +28,7 @@ interface Building {
   name: string
   address: string
   password: string
-  memo?: string          // ← 메모 필드 추가
+  memo?: string
   latitude: number
   longitude: number
   distance?: number
@@ -150,7 +150,6 @@ export default function Home() {
     setSelectedBuilding(building)
   }, [])
 
-  // ── 비밀번호 + 메모 실시간 반영 ──────────────────────────────────────────
   const handlePasswordUpdate = useCallback(
     (buildingId: string, newPassword: string, newMemo: string) => {
       const applyUpdate = (b: Building) =>
@@ -165,17 +164,15 @@ export default function Home() {
     },
     []
   )
-  // ────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     getLocation()
   }, [getLocation])
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4">
+    <div className="dark flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
+      <header className="shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/20">
@@ -215,11 +212,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
         <div className="container mx-auto px-4 pb-3">
           <div className="flex gap-2 rounded-lg bg-secondary p-1">
             <button
-              onClick={() => { setActiveTab("nearby"); setSelectedBuilding(null) }}
+              type="button"
+              onClick={() => {
+                setActiveTab("nearby")
+                setSelectedBuilding(null)
+              }}
               className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "nearby"
                   ? "bg-primary text-primary-foreground"
@@ -230,7 +230,11 @@ export default function Home() {
               내 주변
             </button>
             <button
-              onClick={() => { setActiveTab("search"); setSelectedBuilding(null) }}
+              type="button"
+              onClick={() => {
+                setActiveTab("search")
+                setSelectedBuilding(null)
+              }}
               className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "search"
                   ? "bg-primary text-primary-foreground"
@@ -244,141 +248,142 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Tab Content */}
-      {activeTab === "nearby" ? (
-        <>
-          <LocationStatus
-            loading={loading}
-            error={error}
-            location={location}
-            lastUpdated={lastUpdated}
-            buildingCount={nearbyBuildings.length}
-            onRetry={getLocation}
-          />
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+        {activeTab === "nearby" ? (
+          <>
+            <LocationStatus
+              loading={loading}
+              error={error}
+              location={location}
+              lastUpdated={lastUpdated}
+              buildingCount={nearbyBuildings.length}
+              onRetry={getLocation}
+            />
 
-          {!loading && !error && location && (
-            <section className="container mx-auto px-4 pt-4">
-              <BuildingMap
-                userLocation={location}
-                buildings={allBuildings}
-                onBuildingSelect={handleBuildingSelect}
-                selectedBuilding={selectedBuilding}
-              />
-              {selectedBuilding && (
-                <SelectedBuildingInfo
-                  building={selectedBuilding}
-                  onClose={() => setSelectedBuilding(null)}
-                  onPasswordUpdate={handlePasswordUpdate}
+            {!loading && !error && location && (
+              <section className="container mx-auto shrink-0 px-4 pt-3">
+                <BuildingMap
+                  userLocation={location}
+                  buildings={allBuildings}
+                  onBuildingSelect={handleBuildingSelect}
+                  selectedBuilding={selectedBuilding}
                 />
+                {selectedBuilding && (
+                  <div className="mt-3">
+                    <SelectedBuildingInfo
+                      building={selectedBuilding}
+                      onClose={() => setSelectedBuilding(null)}
+                      onPasswordUpdate={handlePasswordUpdate}
+                    />
+                  </div>
+                )}
+              </section>
+            )}
+
+            <section className="container mx-auto flex-1 px-4 py-4 pb-6">
+              <h2 className="mb-3 text-sm font-medium text-muted-foreground">반경 50m 내 건물</h2>
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="mt-4 text-muted-foreground">주변 건물을 검색 중...</p>
+                </div>
+              ) : error ? (
+                <Card className="border-destructive/50 bg-destructive/10">
+                  <CardContent className="flex flex-col items-center py-10">
+                    <AlertCircle className="h-12 w-12 text-destructive" />
+                    <p className="mt-4 text-center text-destructive">{error}</p>
+                    <Button onClick={getLocation} className="mt-6">
+                      다시 시도
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : nearbyBuildings.length === 0 ? (
+                <Card className="bg-card">
+                  <CardContent className="flex flex-col items-center py-10">
+                    <MapPin className="h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-center text-muted-foreground">
+                      반경 50m 내에 등록된 건물이 없습니다.
+                    </p>
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
+                      지도에서 마커를 클릭하거나 검색 탭을 이용해보세요.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {nearbyBuildings.map((building) => (
+                    <BuildingCard
+                      key={building.id}
+                      building={building}
+                      showDistance
+                      onPasswordUpdate={handlePasswordUpdate}
+                    />
+                  ))}
+                </div>
               )}
             </section>
-          )}
-
-          <section className="container mx-auto px-4 py-6">
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">
-              반경 50m 내 건물
-            </h2>
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">주변 건물을 검색 중...</p>
+          </>
+        ) : (
+          <>
+            <section className="container mx-auto shrink-0 px-4 pt-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="건물명 or 주소 넣어보세요"
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="h-12 border-0 bg-secondary pl-10 text-foreground placeholder:text-muted-foreground/50"
+                  autoFocus
+                />
               </div>
-            ) : error ? (
-              <Card className="border-destructive/50 bg-destructive/10">
-                <CardContent className="flex flex-col items-center py-10">
-                  <AlertCircle className="h-12 w-12 text-destructive" />
-                  <p className="mt-4 text-center text-destructive">{error}</p>
-                  <Button onClick={getLocation} className="mt-6">다시 시도</Button>
-                </CardContent>
-              </Card>
-            ) : nearbyBuildings.length === 0 ? (
-              <Card className="bg-card">
-                <CardContent className="flex flex-col items-center py-10">
-                  <MapPin className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-center text-muted-foreground">
-                    반경 50m 내에 등록된 건물이 없습니다.
-                  </p>
-                  <p className="mt-2 text-center text-sm text-muted-foreground">
-                    지도에서 마커를 클릭하거나 검색 탭을 이용해보세요.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {nearbyBuildings.map((building) => (
-                  <BuildingCard
-                    key={building.id}
-                    building={building}
-                    showDistance
-                    onPasswordUpdate={handlePasswordUpdate}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      ) : (
-        <>
-          <section className="container mx-auto px-4 py-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="건물명 or 주소 넣어보세요"
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 h-12 bg-secondary border-0 text-foreground placeholder:text-muted-foreground/50"
-                autoFocus
-              />
-            </div>
-          </section>
+            </section>
 
-          <section className="container mx-auto px-4 pb-6">
-            {searchQuery.trim() === "" ? (
-              <Card className="bg-card">
-                <CardContent className="flex flex-col items-center py-10">
-                  <Search className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-center text-muted-foreground">
-                    건물명 또는 주소를 검색해주세요
-                  </p>
-                  <p className="mt-2 text-center text-sm text-muted-foreground">
-                    등록된 건물 {allBuildings.length}개
-                  </p>
-                </CardContent>
-              </Card>
-            ) : searchResults.length === 0 ? (
-              <Card className="bg-card">
-                <CardContent className="flex flex-col items-center py-10">
-                  <AlertCircle className="h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 text-center text-muted-foreground">
-                    &apos;{searchQuery}&apos;에 대한 검색 결과가 없습니다.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground mb-3">
-                  검색 결과 {searchResults.length}건
-                </p>
-                {searchResults.map((building) => (
-                  <BuildingCard
-                    key={building.id}
-                    building={building}
-                    showDistance={false}
-                    onPasswordUpdate={handlePasswordUpdate}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      )}
+            <section className="container mx-auto flex-1 px-4 py-4 pb-6">
+              {searchQuery.trim() === "" ? (
+                <Card className="bg-card">
+                  <CardContent className="flex flex-col items-center py-10">
+                    <Search className="h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-center text-muted-foreground">
+                      건물명 또는 주소를 검색해주세요
+                    </p>
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
+                      등록된 건물 {allBuildings.length}개
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : searchResults.length === 0 ? (
+                <Card className="bg-card">
+                  <CardContent className="flex flex-col items-center py-10">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-center text-muted-foreground">
+                      &apos;{searchQuery}&apos;에 대한 검색 결과가 없습니다.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  <p className="mb-3 text-sm text-muted-foreground">검색 결과 {searchResults.length}건</p>
+                  {searchResults.map((building) => (
+                    <BuildingCard
+                      key={building.id}
+                      building={building}
+                      showDistance={false}
+                      onPasswordUpdate={handlePasswordUpdate}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </main>
 
-      <footer className="border-t border-border bg-card/50 py-6">
-        <div className="container mx-auto px-4">
+      <footer className="shrink-0 border-t border-border bg-card/95 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] backdrop-blur-md supports-[backdrop-filter]:bg-card/85">
+        <div className="mx-auto w-full max-w-lg px-2">
           <FooterCheerMarquee />
         </div>
       </footer>
-    </main>
+    </div>
   )
 }
