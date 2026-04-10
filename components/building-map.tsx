@@ -164,14 +164,14 @@ export function BuildingMap({
 
   if (!L) {
     return (
-      <div className="relative w-full h-[300px] rounded-xl overflow-hidden border border-border bg-secondary flex items-center justify-center">
+      <div className="relative h-[min(40vh,340px)] min-h-[260px] w-full rounded-xl overflow-hidden border border-border bg-secondary flex items-center justify-center">
         <div className="text-muted-foreground">지도 로딩 중...</div>
       </div>
     )
   }
 
   return (
-    <div className="relative w-full h-[300px] rounded-xl overflow-hidden border border-border">
+    <div className="relative h-[min(40vh,340px)] min-h-[260px] w-full rounded-xl overflow-hidden border border-border">
       <div ref={mapRef} className="w-full h-full z-0" />
       <style jsx global>{`
         @keyframes pulse {

@@ -91,48 +91,34 @@
   }
 }
 
-/* Footer cheer line: horizontal marquee + shifting gradient on text */
+/* 하단 응원 띠: 마퀴(오른쪽→왼쪽), 배경은 푸터에서 검정 처리 */
 .footer-cheer-mask {
-  mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
-  -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
 }
 
 .footer-cheer-track {
   display: flex;
   width: max-content;
-  animation: footer-cheer-scroll 28s linear infinite;
+  animation: footer-cheer-scroll 24s linear infinite;
 }
 
-.footer-cheer-text {
-  background: linear-gradient(
-    90deg,
-    var(--muted-foreground),
-    var(--primary),
-    oklch(0.82 0.14 145),
-    var(--primary),
-    var(--muted-foreground)
-  );
-  background-size: 220% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: footer-cheer-shimmer 5s ease-in-out infinite;
+.footer-cheer-item {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: #fefce8;
+  text-shadow: 0 0 20px rgba(250, 250, 250, 0.15);
 }
 
 @keyframes footer-cheer-scroll {
   to {
     transform: translate3d(-50%, 0, 0);
-  }
-}
-
-@keyframes footer-cheer-shimmer {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
   }
 }
 
@@ -145,16 +131,12 @@
     max-width: 100%;
   }
 
-  .footer-cheer-text {
-    animation: none;
-    background: none;
-    color: var(--muted-foreground);
-    -webkit-text-fill-color: var(--muted-foreground);
-    padding-left: 0;
-    padding-right: 0;
+  .footer-cheer-item {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
-  .footer-cheer-text + .footer-cheer-text {
+  .footer-cheer-item + .footer-cheer-item {
     display: none;
   }
 

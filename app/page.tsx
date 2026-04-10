@@ -16,7 +16,7 @@ const BuildingMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[300px] shrink-0 rounded-xl bg-secondary flex items-center justify-center">
+      <div className="h-[min(40vh,340px)] min-h-[260px] w-full shrink-0 rounded-xl bg-secondary flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     ),
@@ -170,8 +170,8 @@ export default function Home() {
   }, [getLocation])
 
   return (
-    <div className="dark flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
-      <header className="shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="dark grid h-dvh max-h-dvh w-full grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-background text-foreground">
+      <header className="z-30 shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+      <main className="min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
         {activeTab === "nearby" ? (
           <>
             <LocationStatus
@@ -379,10 +379,12 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="shrink-0 border-t border-border bg-card/95 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] backdrop-blur-md supports-[backdrop-filter]:bg-card/85">
-        <div className="mx-auto w-full max-w-lg px-2">
-          <FooterCheerMarquee />
-        </div>
+      <footer
+        className="z-20 shrink-0 border-t border-zinc-800 bg-black pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_rgba(0,0,0,0.5)]"
+        role="contentinfo"
+        aria-label="응원 메시지"
+      >
+        <FooterCheerMarquee />
       </footer>
     </div>
   )
