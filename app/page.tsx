@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { BuildingCard } from "@/components/building-card"
 import { LocationStatus } from "@/components/location-status"
 import { SelectedBuildingInfo } from "@/components/selected-building-info"
+import { FooterCheerMarquee } from "@/components/footer-cheer-marquee"
 
 const BuildingMap = dynamic(
   () => import("@/components/building-map").then((mod) => mod.BuildingMap),
@@ -374,10 +375,8 @@ export default function Home() {
       )}
 
       <footer className="border-t border-border bg-card/50 py-6">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            배달/택배 기사님들의 빠른 배송을 응원합니다
-          </p>
+        <div className="container mx-auto px-4">
+          <FooterCheerMarquee />
         </div>
       </footer>
     </main>
