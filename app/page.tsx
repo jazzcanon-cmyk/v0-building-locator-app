@@ -64,13 +64,31 @@ export default function Home() {
   const fetchBuildings = useCallback(async (lat?: number, lng?: number) => {
     try {
       const response = await fetch("/api/buildings")
-      if (!response.ok) throw new Error("데이터를 가져오는데 실패했습니다.")
+      let data: { buildings?: Building[]; error?: string } = {}
+      try {
+        data = await response.json()
+      } catch {
+        data = {}
+      }
 
-      const data = await response.json()
-      setAllBuildings(data.buildings)
+      if (!response.ok) {
+        const msg =
+          typeof data.error === "string" && data.error.length > 0
+            ? data.error
+            : "데이터를 가져오는데 실패했습니다."
+        setError(msg)
+        setAllBuildings([])
+        setNearbyBuildings([])
+        setSearchResults([])
+        return
+      }
+
+      const buildings = Array.isArray(data.buildings) ? data.buildings : []
+      setAllBuildings(buildings)
+      setError(null)
 
       if (lat !== undefined && lng !== undefined) {
-        const buildingsWithDistance = data.buildings
+        const buildingsWithDistance = buildings
           .map((building: Building) => ({
             ...building,
             distance: Math.round(
@@ -87,6 +105,9 @@ export default function Home() {
     } catch (err) {
       console.error("Error fetching buildings:", err)
       setError("건물 데이터를 가져오는데 실패했습니다.")
+      setAllBuildings([])
+      setNearbyBuildings([])
+      setSearchResults([])
     }
   }, [])
 
