@@ -193,61 +193,56 @@ export default function Home() {
   return (
     <div className="dark grid h-dvh max-h-dvh w-full grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-background text-foreground">
       <header className="z-30 shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/20">
-                <div className="absolute inset-0 rounded-xl bg-primary/20 blur-sm" />
-                <svg
-                  className="relative h-5 w-5 text-primary-foreground"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 21h18" />
-                  <path d="M5 21V7l8-4v18" />
-                  <path d="M19 21V11l-6-4" />
-                  <path d="M9 9v.01" />
-                  <path d="M9 12v.01" />
-                  <path d="M9 15v.01" />
-                  <path d="M9 18v.01" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">신정대리점</h1>
-                <p className="text-xs text-muted-foreground">공동현관 비밀번호</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <svg
+                className="h-4 w-4 text-primary"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 21h18" />
+                <path d="M5 21V7l8-4v18" />
+                <path d="M19 21V11l-6-4" />
+                <path d="M9 9v.01" />
+                <path d="M9 12v.01" />
+                <path d="M9 15v.01" />
+                <path d="M9 18v.01" />
+              </svg>
+              <h1 className="text-sm font-semibold text-foreground">신정대리점</h1>
+              <span className="text-xs text-muted-foreground">공동현관 비밀번호</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={getLocation}
               disabled={loading}
-              className="text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
             >
-              <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 pb-3">
-          <div className="flex gap-2 rounded-lg bg-secondary p-1">
+        <div className="container mx-auto px-4 pb-2">
+          <div className="flex gap-1.5 rounded-lg bg-secondary p-1">
             <button
               type="button"
               onClick={() => {
                 setActiveTab("nearby")
                 setSelectedBuilding(null)
               }}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-all ${
                 activeTab === "nearby"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Navigation className="h-4 w-4" />
+              <Navigation className="h-3.5 w-3.5" />
               내 주변
             </button>
             <button
@@ -256,13 +251,13 @@ export default function Home() {
                 setActiveTab("search")
                 setSelectedBuilding(null)
               }}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-all ${
                 activeTab === "search"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Search className="h-4 w-4" />
+              <Search className="h-3.5 w-3.5" />
               검색
             </button>
           </div>
