@@ -31,7 +31,8 @@ export async function POST(request: Request) {
 
     if (error) throw error;
     return NextResponse.json({ message: '성공적으로 저장되었습니다!' });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -40,14 +40,12 @@ export const metadata: Metadata = {
     url: "https://doorpass.kr",
   },
 
-  // 아이콘
   icons: {
     icon: [
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      // iOS 홈 화면 아이콘 (apple-touch-icon)
       { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     shortcut: "/icons/icon-192x192.png",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import {
   parseGeolocationError,
   HIGH_ACCURACY_OPTIONS,
@@ -26,7 +26,6 @@ interface UseGeolocationReturn {
   setAccuracyMode: (mode: AccuracyMode) => void;
   requestLocation: () => void;
   clearError: () => void;
-  /** 실제 GPS가 아니라 기본 좌표를 쓰는 경우 */
   locationSource: LocationSource;
 }
 
@@ -39,19 +38,18 @@ export function useGeolocation(): UseGeolocationReturn {
   const [accuracyMode, setAccuracyMode] = useState<AccuracyMode>("high");
   const [locationSource, setLocationSource] = useState<LocationSource>(null);
 
-  // Keep a ref so we can cancel if needed
-  const watchIdRef = useRef<number | null>(null);
+  const useFallback = useCallback(() => {
+    setLatitude(FALLBACK_LATITUDE);
+    setLongitude(FALLBACK_LONGITUDE);
+    setAccuracy(null);
+    setError(null);
+    setLocationSource("fallback");
+    setLoading(false);
+  }, []);
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      alert(
-        "이 브라우저는 위치 서비스를 지원하지 않습니다. 울산 남구 일대 기준 위치로 안내합니다."
-      );
-      setLatitude(FALLBACK_LATITUDE);
-      setLongitude(FALLBACK_LONGITUDE);
-      setAccuracy(null);
-      setError(null);
-      setLocationSource("fallback");
+      useFallback();
       return;
     }
 
@@ -76,17 +74,9 @@ export function useGeolocation(): UseGeolocationReturn {
         geoError
       );
 
-      // 위치를 잡을 수 없을 때: 안내 후 울산 남구 기본 좌표로 폴백
+      // POSITION_UNAVAILABLE: 폴백 좌표로 대체
       if (geoError.code === 2) {
-        alert(
-          "현재 위치를 파악할 수 없습니다. GPS나 네트워크 상태를 확인해주세요."
-        );
-        setLatitude(FALLBACK_LATITUDE);
-        setLongitude(FALLBACK_LONGITUDE);
-        setAccuracy(null);
-        setError(null);
-        setLocationSource("fallback");
-        setLoading(false);
+        useFallback();
         return;
       }
 
@@ -95,14 +85,8 @@ export function useGeolocation(): UseGeolocationReturn {
       setLoading(false);
     };
 
-    // Clear previous watch
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-    }
-
-    // Use getCurrentPosition for a one-shot fix
     navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
-  }, [accuracyMode]);
+  }, [accuracyMode, useFallback]);
 
   const clearError = useCallback(() => setError(null), []);
 
